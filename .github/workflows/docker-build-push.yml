@@ -10,10 +10,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    env:
-      IMAGE_NAME: docker.io/cyberdog123/gpu_utilizer:latest
-      DOCKERFILE_PATH: pytorch_gpu_utilizer.Dockerfile
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -27,10 +23,37 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build the Docker image
+    - name: Generate Dockerfile matrix
+      id: generate-matrix
       run: |
-          docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+        echo "Generating matrix..."
+        dockerfiles=$(find . -name '*.Dockerfile')
+        matrix="{\"include\":["
+        for dockerfile in $dockerfiles; do
+          image_name="docker.io/cyberdog123/$(basename ${dockerfile%.*}):latest"
+          matrix="${matrix}{\"dockerfile_path\":\"$dockerfile\",\"image_name\":\"$image_name\"},"
+        done
+        matrix="${matrix%,}]}"
+        echo "matrix=$matrix" >> $GITHUB_ENV
 
-    - name: Push the Docker image to Docker Hub
+    - name: Build and Push Docker Images
       run: |
-          docker push $IMAGE_NAME
+        echo "Building and pushing Docker images..."
+        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ env.matrix }}); do
+          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ env.matrix }})
+          docker build -f $dockerfile -t $image_name .
+          docker push $image_name
+
+    - name: Set Dockerfile URL in GitHub Repo Overview
+      run: |
+        echo "Setting Dockerfile URL in GitHub Repo Overview..."
+        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ env.matrix }}); do
+          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ env.matrix }})
+          repo_name=$(basename ${dockerfile%.*})
+          dockerfile_url="https://github.com/${{ github.repository }}/blob/main/$dockerfile"
+          curl -X PATCH \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/docker/${repo_name} \
+          -d "{\"description\":\"Dockerfile URL: $dockerfile_url\"}"
+        done
