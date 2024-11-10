@@ -40,9 +40,9 @@ jobs:
     - name: Install jq
       run: sudo apt-get update && sudo apt-get install -y jq
 
-    - name: Build and Push Docker Images
+    - name: Build, Push Docker Images and Set Dockerfile URL
       run: |
-        echo "Building and pushing Docker images..."
+        echo "Building, pushing Docker images and setting Dockerfile URL..."
         matrix=${{ steps.generate-matrix.outputs.matrix }}
         for dockerfile in $(echo "$matrix" | jq -r '.include[].dockerfile_path'); do
           image_name=$(echo "$matrix" | jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name")
@@ -50,13 +50,6 @@ jobs:
           echo "dockerfile path: $dockerfile"
           docker build -f $dockerfile -t $image_name .
           docker push $image_name
-        done
-
-    - name: Set Dockerfile URL in GitHub Repo Overview
-      run: |
-        echo "Setting Dockerfile URL in GitHub Repo Overview..."
-        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ steps.generate-matrix.outputs.matrix }}); do
-          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ steps.generate-matrix.outputs.matrix }})
           repo_name=$(basename ${dockerfile%.*})
           dockerfile_url="https://github.com/${{ github.repository }}/blob/main/$dockerfile"
           curl -X PATCH \
