@@ -35,9 +35,11 @@ jobs:
         done
         matrix="${matrix%,}]}"
         echo "matrix=$matrix" >> $GITHUB_ENV
+        echo $matrix
 
     - name: Build and Push Docker Images
       run: |
+        echo ${{ steps.generate-matrix.outputs.matrix }}
         echo "Building and pushing Docker images..."
         matrix=$(echo "${{ steps.generate-matrix.outputs.matrix }}" | jq -c '.')
         for dockerfile in $(jq -r '.include[].dockerfile_path' <<< "$matrix"); do
