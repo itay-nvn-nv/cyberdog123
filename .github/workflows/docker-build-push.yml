@@ -23,29 +23,15 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Generate Dockerfile matrix
-      id: generate-matrix
-      run: |
-        echo "Generating matrix..."
-        dockerfiles=$(find . -name '*.Dockerfile')
-        matrix="{\"include\":["
-        for dockerfile in $dockerfiles; do
-          image_name="docker.io/cyberdog123/$(basename ${dockerfile%.*}):latest"
-          matrix="${matrix}{\"dockerfile_path\":\"$dockerfile\",\"image_name\":\"$image_name\"},"
-        done
-        matrix="${matrix%,}]}"
-        echo "matrix=$matrix" >> $GITHUB_ENV
-        echo $matrix
-
     - name: Install jq
       run: sudo apt-get update && sudo apt-get install -y jq
-
+  
     - name: Build, Push Docker Images and Set Dockerfile URL
       run: |
         echo "Building, pushing Docker images and setting Dockerfile URL..."
-        matrix=${{ steps.generate-matrix.outputs.matrix }}
-        for dockerfile in $(echo "$matrix" | jq -r '.include[].dockerfile_path'); do
-          image_name=$(echo "$matrix" | jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name")
+        dockerfiles=$(find . -name '*.Dockerfile')
+        for dockerfile in $dockerfiles; do
+          image_name="docker.io/cyberdog123/$(basename ${dockerfile%.*}):latest"
           echo "image name: $image_name"
           echo "dockerfile path: $dockerfile"
           docker build -f $dockerfile -t $image_name .
