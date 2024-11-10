@@ -39,16 +39,17 @@ jobs:
     - name: Build and Push Docker Images
       run: |
         echo "Building and pushing Docker images..."
-        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ env.matrix }}); do
-          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ env.matrix }})
+        matrix=$(echo "${{ steps.generate-matrix.outputs.matrix }}" | jq -c '.')
+        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< "$matrix"); do
+          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< "$matrix")
           docker build -f $dockerfile -t $image_name .
           docker push $image_name
 
     - name: Set Dockerfile URL in GitHub Repo Overview
       run: |
         echo "Setting Dockerfile URL in GitHub Repo Overview..."
-        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ env.matrix }}); do
-          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ env.matrix }})
+        for dockerfile in $(jq -r '.include[].dockerfile_path' <<< ${{ steps.generate-matrix.outputs.matrix }}); do
+          image_name=$(jq -r ".include[] | select(.dockerfile_path==\"$dockerfile\") | .image_name" <<< ${{ steps.generate-matrix.outputs.matrix }})
           repo_name=$(basename ${dockerfile%.*})
           dockerfile_url="https://github.com/${{ github.repository }}/blob/main/$dockerfile"
           curl -X PATCH \
