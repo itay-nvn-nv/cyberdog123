@@ -10,6 +10,10 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: docker.io/cyberdog123/gpu_utilizer:latest
+      DOCKERFILE_PATH: pytorch_gpu_utilizer.Dockerfile
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -25,8 +29,8 @@ jobs:
 
     - name: Build the Docker image
       run: |
-          docker build -f pytorch_gpu_utilizer.Dockerfile -t docker.io/cyberdog123/gpu_utilizer:latest .
+          docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
 
     - name: Push the Docker image to Docker Hub
       run: |
-          docker push docker.io/bla123/gpu:latest
+          docker push $IMAGE_NAME
