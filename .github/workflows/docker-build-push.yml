@@ -4,7 +4,7 @@ on:
   workflow_dispatch:  # Allows manual triggering from the GitHub UI
   push:
     branches:
-      - main  # Trigger on push to main branch (you can change this to any branch you prefer)
+      - main  # Trigger on push to main branch
 
 jobs:
   build-and-push:
@@ -31,15 +31,13 @@ jobs:
         echo "Building, pushing Docker images and setting Dockerfile URL..."
         dockerfiles=$(find . -name '*.Dockerfile')
         for dockerfile in $dockerfiles; do
+          dockerfile_url="https://github.com/${{ github.repository }}/blob/main/$dockerfile"
           repo_name=$(basename ${dockerfile%.*})
           image_name="docker.io/${{ secrets.DOCKER_USERNAME }}/$repo_name:latest"
-          echo "repo name: $repo_name"
-          echo "image name: $image_name"
           echo "dockerfile path: $dockerfile"
+          echo "image name: $image_name"
           docker build -f $dockerfile -t $image_name .
           docker push $image_name
-          repo_name=$(basename ${dockerfile%.*})
-          dockerfile_url="https://github.com/${{ github.repository }}/blob/main/$dockerfile"
           DOCKER_TOKEN=$(curl -s -X POST "https://hub.docker.com/v2/users/login/" \
           -H "Content-Type: application/json" \
           -d "{\"username\": \"$username\", \"password\": \"$password\"}' | jq -r .token)
