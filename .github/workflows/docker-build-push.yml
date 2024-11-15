@@ -22,7 +22,7 @@ jobs:
         run: |
           echo "dockerfiles=$(find . -type f -name "*.Dockerfile" | sed 's/^\.\///' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
-  build:
+  check-updates:
     needs: find-dockerfiles
     runs-on: ubuntu-latest
     strategy:
@@ -30,7 +30,7 @@ jobs:
         dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
       fail-fast: false
     outputs:
-      image_names: ${{ steps.set-image.outputs.image_names }}
+      needs_update: ${{ steps.check.outputs.needs_update }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,22 +40,74 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
-        id: set-image
+      - name: Calculate image hash and check remote
+        id: check
         run: |
           dockerfile="${{ matrix.dockerfile }}"
           image_name=$(basename "$dockerfile" .Dockerfile)
           full_image_name="${{ env.DOCKERHUB_REPO }}/$image_name:latest"
           
-          echo "image_name=$image_name" >> $GITHUB_OUTPUT
-          echo "Building $dockerfile as $full_image_name"
+          # Calculate hash of build context
+          context_hash=$(tar -czf - -C "$(dirname "$dockerfile")" . "$(basename "$dockerfile")" | sha256sum | cut -d' ' -f1)
           
-          docker build -t "$full_image_name" \
-                      -f "$dockerfile" \
-                      "$(dirname "$dockerfile")"
+          echo "Context hash: $context_hash"
+          
+          # Try to get remote image digest
+          remote_digest=$(docker manifest inspect "$full_image_name" 2>/dev/null | jq -r '.[0].Digest' || echo '')
+          
+          # If remote image doesn't exist or context has changed, mark for update
+          if [ -z "$remote_digest" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "Image doesn't exist remotely, needs building"
+          else
+            # Get labels from remote image
+            remote_context_hash=$(docker manifest inspect "$full_image_name" | jq -r '.[0].Labels."build.context.hash"' || echo '')
+            
+            if [ "$context_hash" != "$remote_context_hash" ]; then
+              echo "needs_update=true" >> $GITHUB_OUTPUT
+              echo "Context hash changed, needs rebuilding"
+            else
+              echo "needs_update=false" >> $GITHUB_OUTPUT
+              echo "Image is up to date"
+            fi
+          fi
+
+  build:
+    needs: [find-dockerfiles, check-updates]
+    if: needs.check-updates.outputs.needs_update == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: "{{ github.workspace }}/$(dirname '${{ matrix.dockerfile }}')"
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ env.DOCKERHUB_REPO }}/$(basename '${{ matrix.dockerfile }}' .Dockerfile):latest
+          labels: |
+            build.context.hash=${{ steps.context-hash.outputs.hash }}
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/$(basename '${{ matrix.dockerfile }}' .Dockerfile):latest
+          cache-to: type=inline
 
   push:
-    needs: build
+    needs: [check-updates, build]
+    if: needs.check-updates.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,11 +126,11 @@ jobs:
           image_name=$(basename "$dockerfile" .Dockerfile)
           full_image_name="${{ env.DOCKERHUB_REPO }}/$image_name:latest"
           
-          echo "Pushing $full_image_name"
           docker push "$full_image_name"
 
   patch-dockerhub:
-    needs: [build, push]
+    needs: [check-updates, push]
+    if: needs.check-updates.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -96,8 +148,6 @@ jobs:
           if [ -f "$(dirname "$dockerfile")/dockerfile-description.md" ]; then
             description=$(cat "$(dirname "$dockerfile")/dockerfile-description.md")
           fi
-          
-          echo "Updating description for $image_name"
           
           curl -X PATCH \
             "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_REPO }}/$image_name/" \
