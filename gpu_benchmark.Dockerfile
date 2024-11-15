@@ -9,26 +9,37 @@ RUN git clone https://github.com/linux-rdma/perftest && \
     make && \
     make install
 
+# Create the script directly within the Dockerfile using a heredoc
+RUN cat << 'EOF' > /usr/local/bin/gpu-monitor.sh
+#!/bin/bash
+
 # Benchmarking
-RUN nvidia-smi cuda-benchmarks
+nvidia-smi cuda-benchmarks
 
 # GPU utilization
-RUN nvidia-smi --query-gpu=utilization.gpu --format=csv
+nvidia-smi --query-gpu=utilization.gpu --format=csv
 
 # GPU memory allocation
-RUN nvidia-smi --query-gpu=memory.total,memory.used --format=csv
+nvidia-smi --query-gpu=memory.total,memory.used --format=csv
 
-# temperature
-RUN nvidia-smi --query-gpu=temperature.gpu --format=csv
+# Temperature
+nvidia-smi --query-gpu=temperature.gpu --format=csv
 
-# power usage
-RUN nvidia-smi --query-gpu=power.draw --format=csv
+# Power usage
+nvidia-smi --query-gpu=power.draw --format=csv
 
-# I/O and Throughput for InfiniBand:
-RUN ib_write_bw -d mlx5_0 -a
+# I/O and Throughput for InfiniBand
+ib_write_bw -d mlx5_0 -a
 
-# CUDA BandwidthTest:
-RUN bandwidthTest
+# CUDA BandwidthTest
+bandwidthTest
+EOF
+
+# Make the script executable
+RUN chmod +x /usr/local/bin/gpu-monitor.sh
+
+# Set the script as the default command
+CMD ["/usr/local/bin/gpu-monitor.sh"]
 
 # Criteria for Evaluation:
 # - GPU Utilization: High utilization indicates efficient use of the GPU.
