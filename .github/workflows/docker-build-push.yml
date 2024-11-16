@@ -53,7 +53,7 @@ jobs:
           echo "Context hash: $context_hash"
           
           # Try to get remote image digest
-          remote_digest=$(docker manifest inspect "$full_image_name" 2>/dev/null | jq -r '.[0].Digest' || echo '')
+          remote_digest=$(docker manifest inspect "$full_image_name" 2>/dev/null | jq -r '.manifests[0].digest' || echo '')
           
           # If remote image doesn't exist or context has changed, mark for update
           if [ -z "$remote_digest" ]; then
@@ -61,7 +61,7 @@ jobs:
             echo "Image doesn't exist remotely, needs building"
           else
             # Get labels from remote image
-            remote_context_hash=$(docker manifest inspect "$full_image_name" | jq -r '.[0].Labels."build.context.hash"' || echo '')
+            remote_context_hash=$(docker manifest inspect "$full_image_name" | jq -r '.manifests[0].annotations."build.context.hash"' || echo '')
             
             if [ "$context_hash" != "$remote_context_hash" ]; then
               echo "needs_update=true" >> $GITHUB_OUTPUT
@@ -71,6 +71,7 @@ jobs:
               echo "Image is up to date"
             fi
           fi
+          echo "context_hash=$context_hash" >> $GITHUB_OUTPUT
 
   build:
     needs: [find-dockerfiles, check-updates]
@@ -102,7 +103,7 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
           labels: |
-            build.context.hash=${{ steps.check.outputs.context_hash }}
+            build.context.hash=${{ needs.check-updates.outputs.context_hash }}
           cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
           cache-to: type=inline
 
