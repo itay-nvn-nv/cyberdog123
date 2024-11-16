@@ -95,13 +95,13 @@ jobs:
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: "{{ github.workspace }}/$(dirname ${{ matrix.dockerfile }})"
+          context: ${{ github.workspace }}/$(dirname ${{ matrix.dockerfile }})
           file: ${{ matrix.dockerfile }}
           push: false
           load: true
           tags: ${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
           labels: |
-            build.context.hash=${{ steps.context-hash.outputs.hash }}
+            build.context.hash=${{ steps.check.outputs.context_hash }}
           cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
           cache-to: type=inline
 
