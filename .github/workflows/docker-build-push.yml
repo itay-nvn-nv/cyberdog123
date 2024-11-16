@@ -99,7 +99,8 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: false
           load: true
-          tags: ${{ env.DOCKERHUB_REPO }}/${{ matrix.dockerfile | split: '/' | last | split: '.' | first }}:latest
+          tags: |
+            ${{ env.DOCKERHUB_REPO }}/${{ matrix.dockerfile | split: '/' | last | split: '.' | first }}:latest
           labels: |
             build.context.hash=${{ steps.check.outputs.context_hash }}
           cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
