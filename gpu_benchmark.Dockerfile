@@ -12,12 +12,12 @@
 # - Error Rates: Especially in cases where workloads are very intensive, error rates or retries in the I/O system can indicate performance degradation.
 
 FROM nvcr.io/nvidia/cuda:12.6.1-base-ubuntu24.04
-RUN git clone https://github.com/linux-rdma/perftest && \
-    cd perftest/ && \
-    ./autogen.sh && \
-    ./configure && \
-    make && \
-    make install
+# RUN git clone https://github.com/linux-rdma/perftest && \
+#     cd perftest/ && \
+#     ./autogen.sh && \
+#     ./configure && \
+#     make && \
+#     make install
 
 # Create the script directly within the Dockerfile using a heredoc
 ENV SCRIPT_FILE /usr/local/bin/gpu-monitor.sh
