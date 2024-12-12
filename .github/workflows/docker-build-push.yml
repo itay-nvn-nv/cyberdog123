@@ -93,18 +93,24 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
+      - name: Extract image name
+        id: image-name
+        run: |
+          image_name=$(basename "${{ matrix.dockerfile }}" .Dockerfile)
+          echo "name=$image_name" >> $GITHUB_OUTPUT
+
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ github.workspace }}/$(dirname ${{ matrix.dockerfile }})
+          context: ${{ github.workspace }}
           file: ${{ matrix.dockerfile }}
           push: false
           load: true
           tags: |
-            ${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
+            ${{ env.DOCKERHUB_REPO }}/${{ steps.image-name.outputs.name }}:latest
           labels: |
             build.context.hash=${{ needs.check-updates.outputs.context_hash }}
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/$(basename ${{ matrix.dockerfile }} .Dockerfile):latest
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/${{ steps.image-name.outputs.name }}:latest
           cache-to: type=inline
 
   push:
@@ -139,23 +145,10 @@ jobs:
         dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Update DockerHub Description
-        run: |
-          dockerfile="${{ matrix.dockerfile }}"
-          image_name=$(basename "$dockerfile" .Dockerfile)
-          
-          description="Built from $dockerfile"
-          if [ -f "$(dirname "$dockerfile")/dockerfile-description.md" ]; then
-            description=$(cat "$(dirname "$dockerfile")/dockerfile-description.md")
-          fi
-          
-          curl -X PATCH \
-            "https://hub.docker.com/v2/repositories/${{ env.DOCKERHUB_REPO }}/$image_name/" \
-            -H "Authorization: JWT $DOCKERHUB_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data-raw "{
-              \"description\": \"$description\",
-              \"full_description\": \"$description\"
-            }"
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+          repository: peterevans/dockerhub-description
+          readme-filepath: ./path/to/README.md
