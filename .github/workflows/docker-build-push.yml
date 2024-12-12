@@ -113,7 +113,7 @@ jobs:
           cache-to: type=inline
 
   patch-dockerhub:
-    needs: [check-updates, push]
+    needs: [build]
     if: needs.check-updates.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
     strategy:
