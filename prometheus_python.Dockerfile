@@ -12,6 +12,5 @@ query_result = client.custom_query(query='up')\n\
 print(query_result)" > /tmp/prometheus.py
 
 RUN cat /tmp/prometheus.py
-RUN python /tmp/prometheus.py
 
 CMD ["/bin/bash"]
