@@ -1,7 +1,15 @@
 FROM ubuntu:latest
 
 # Install necessary packages
-RUN apt-get update && apt-get install -y --no-install-recommends adduser sudo chpasswd
+RUN apt-get update && apt-get install -y --no-install-recommends adduser sudo
+
+# Create the groups first!
+RUN groupadd -g 601 johnnies
+RUN groupadd -g 602 janies
+RUN groupadd -g 603 stevies
+RUN groupadd -g 604 jackies
+RUN groupadd -g 605 blipis
+
 
 # Create the users and set passwords
 RUN useradd -m -u 301 -g 601 john && echo "john:123456" | chpasswd
