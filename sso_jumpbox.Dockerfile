@@ -19,11 +19,14 @@ RUN useradd -m -u 3040 -g 6040 jacky && echo "jacky:123456" | chpasswd
 RUN useradd -m -u 3050 -g 6050 blip && echo "blip:123456" | chpasswd
 
 # Set permissions for the home directories
-RUN chown john:6010 /home/john
-RUN chown jane:6020 /home/jane
-RUN chown steve:6030 /home/steve
-RUN chown jacky:6040 /home/jacky
-RUN chown blip:6050 /home/blip
+RUN chown john:johnnies /home/john
+RUN chown jane:janies /home/jane
+RUN chown steve:stevies /home/steve
+RUN chown jacky:jackies /home/jacky
+RUN chown blip:blipis /home/blip
+
+# Secure home directories (restrict other users)
+RUN chmod 700 /home/john /home/jane /home/steve /home/jacky /home/blip
 
 # Create admin user and grant sudo privileges
 RUN useradd -m -G sudo admin && echo "admin:123456" | chpasswd
@@ -33,9 +36,6 @@ RUN cat /etc/group
 
 # Set working directory (optional)
 WORKDIR /home/john
-
-# Expose any necessary ports
-# EXPOSE 8080
 
 # Command to run when the container starts (replace with your application)
 CMD ["/bin/bash"]
