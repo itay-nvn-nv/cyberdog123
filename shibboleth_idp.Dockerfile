@@ -19,7 +19,7 @@ RUN  echo 'idp.entityID="runai-entity"' >> $SHIB_IDP_CONFIG_FILE
 RUN  echo 'idp.host.name="blablabla.com"' >> $SHIB_IDP_CONFIG_FILE
 RUN  echo 'idp.scope="blablabla"' >> $SHIB_IDP_CONFIG_FILE
 
-RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile shib_idp_install_config
+RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 
 # 1) Edit idp.properties: 
 #    The main configuration file is idp.properties, located in the conf directory of your IdP installation. Update the file with your specific settings, such as the entity ID and scope.
