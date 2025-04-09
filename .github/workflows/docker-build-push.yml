@@ -90,8 +90,8 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           directory=$(dirname "${{ matrix.dockerfile }}")
-          image_name=$(basename "$directory")
-          image_full_name="${{ secrets.DOCKERHUB_USERNAME }}/$image_name:${GITHUB_SHA::7}"
+          image_name="${${{ matrix.dockerfile }}%.Dockerfile}"
+          image_full_name="${{ secrets.DOCKER_USERNAME }}/$image_name:latest"
 
           echo "Building and pushing image: $image_full_name"
 
