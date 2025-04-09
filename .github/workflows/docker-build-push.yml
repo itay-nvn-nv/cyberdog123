@@ -64,11 +64,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-    if: ${{ env.dockerfile_list != '[]' }}
+    if: ${{ needs.find-dockerfiles.outputs.dockerfile_list != '[]' }}  # Corrected to use step output
+
     strategy:
       matrix:
-        dockerfile: ${{ fromJson(env.dockerfile_list) }}
-        
+        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfile_list) }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
