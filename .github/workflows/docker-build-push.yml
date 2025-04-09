@@ -49,11 +49,13 @@ jobs:
           if [ -z "$DOCKERFILES" ]; then
             echo "No Dockerfiles found in the changed files. Skipping build and push."
             echo "dockerfile_list=[]" >> $GITHUB_ENV  # Empty JSON array for no dockerfiles
+            echo "::set-output name=dockerfile_list::[]"  # Correctly set the output as an empty array
           else
             echo "Found Dockerfiles: $DOCKERFILES"
             # Convert comma-separated list into JSON format (array of paths)
             DOCKERFILES_JSON=$(echo "$DOCKERFILES" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
             echo "dockerfile_list=$DOCKERFILES_JSON" >> $GITHUB_ENV
+            echo "::set-output name=dockerfile_list::$DOCKERFILES_JSON"  # Set the output correctly
           fi
 
         shell: bash
@@ -64,11 +66,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    if: ${{ needs.find-dockerfiles.outputs.dockerfile_list != '[]' }}  # Corrected to use step output
+    if: ${{ needs.find-dockerfiles.outputs.dockerfile_list != '[]' }}  # Corrected to use job output
 
     strategy:
       matrix:
-        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfile_list) }}
+        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfile_list) }}  # Access output correctly
 
     steps:
       - name: Checkout code

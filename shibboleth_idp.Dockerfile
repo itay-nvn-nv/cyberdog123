@@ -13,7 +13,6 @@ RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARC
     pwd
 
 RUN pwd
-RUN echo
 
 RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh \
     --noPrompt \
