@@ -20,16 +20,27 @@ jobs:
       - name: Find Dockerfiles
         id: dockerfiles
         run: |
+          set -x # Enable debugging
+
+          # Check if we're in a detached HEAD state
+          if git rev-parse --is-shallow-repository; then
+            echo "::warning title=Shallow Repository::The repository is shallow.  Fetching all history."
+            git fetch --unshallow
+          fi
+
           # Determine the parent commit.  Handles initial commit and branch creation cases.
-          PARENT_COMMIT=$(git rev-parse --short HEAD^)
+          PARENT_COMMIT=$(git rev-parse --short HEAD^ 2>/dev/null) # Suppress error output
 
           # Check if there's a parent commit
           if [ -z "$PARENT_COMMIT" ]; then
-            echo "No parent commit found.  This is likely the first commit."
+            echo "No parent commit found. This is likely the first commit or detached HEAD."
             CHANGED_FILES=$(git ls-tree -r HEAD --name-only) # Get all files in the repo
           else
+            echo "Parent commit: $PARENT_COMMIT"
             CHANGED_FILES=$(git diff --name-only "$PARENT_COMMIT" HEAD)
           fi
+
+          echo "Changed files: $CHANGED_FILES"
 
           DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//')
 
