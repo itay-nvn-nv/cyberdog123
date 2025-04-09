@@ -4,15 +4,15 @@ ENV VERSION="5.1.4"
 
 ENV SHIB_IDP_FOLDER="shibboleth-identity-provider-$VERSION"
 ENV SHIB_IDP_ARCHIVE="$SHIB_IDP_FOLDER.tar.gz"
+ENV HOME_FOLDER="/usr/local/tomcat"
 
 RUN java -version
 RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARCHIVE && \
     tar -xzvf $SHIB_IDP_ARCHIVE && \
-    cd $SHIB_IDP_FOLDER
+    cd $SHIB_IDP_FOLDER \
+    pwd
 
-RUN pwd
-RUN ls -la
-RUN ./bin/install.sh \
+RUN .$HOME_FOLDER/$SHIB_IDP_FOLDER/bin/install.sh \
     --noPrompt \
     --targetDir /opt/shibboleth-idp \
     --hostName blablabla.com \
