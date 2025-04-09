@@ -13,11 +13,11 @@ RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARC
     pwd
 
 ENV SHIB_IDP_CONFIG_FILE="/tmp/shib_idp_install_config"
-RUN  echo "idp.noprompt=true" >> $SHIB_IDP_CONFIG_FILE
-RUN  echo 'idp.target.dir="/opt/shibboleth-idp"' >> $SHIB_IDP_CONFIG_FILE
-RUN  echo 'idp.entityID="runai-entity"' >> $SHIB_IDP_CONFIG_FILE
-RUN  echo 'idp.host.name="blablabla.com"' >> $SHIB_IDP_CONFIG_FILE
-RUN  echo 'idp.scope="blablabla"' >> $SHIB_IDP_CONFIG_FILE
+RUN echo "idp.noprompt=true" >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.target.dir=/opt/shibboleth-idp' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.entityID=runai-entity' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.host.name=blablabla.com' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.scope=blablabla' >> $SHIB_IDP_CONFIG_FILE
 
 RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 
