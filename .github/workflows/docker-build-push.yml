@@ -25,12 +25,12 @@ jobs:
           # Check if we're in a detached HEAD state and if it's a shallow repository
           IS_SHALLOW=$(git rev-parse --is-shallow-repository 2>/dev/null)
 
-          if [[ "$IS_SHALLOW" == "true" ]]; then #Corrected comparison
-            echo "::warning title=Shallow Repository::The repository is shallow.  Fetching all history."
+          if [[ "$IS_SHALLOW" == "true" ]]; then # Corrected comparison
+            echo "::warning title=Shallow Repository::The repository is shallow. Fetching all history."
             git fetch --unshallow || true  # Ignore the error if unshallow fails
           fi
 
-          # Determine the parent commit.  Handles initial commit and branch creation cases.
+          # Determine the parent commit. Handles initial commit and branch creation cases.
           PARENT_COMMIT=$(git rev-parse --short HEAD^ 2>/dev/null) # Suppress error output
 
           # Check if there's a parent commit
@@ -48,10 +48,12 @@ jobs:
 
           if [ -z "$DOCKERFILES" ]; then
             echo "No Dockerfiles found in the changed files. Skipping build and push."
-            echo "::set-output name=dockerfile_list::"
+            echo "dockerfile_list=[]" >> $GITHUB_ENV  # Empty JSON array for no dockerfiles
           else
             echo "Found Dockerfiles: $DOCKERFILES"
-            echo "::set-output name=dockerfile_list::$DOCKERFILES"
+            # Convert comma-separated list into JSON format (array of paths)
+            DOCKERFILES_JSON=$(echo "$DOCKERFILES" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+            echo "dockerfile_list=$DOCKERFILES_JSON" >> $GITHUB_ENV
           fi
 
         shell: bash
@@ -62,11 +64,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    if: needs.find-dockerfiles.outputs.dockerfile_list != ''
+    if: ${{ env.dockerfile_list != '[]' }}
     strategy:
       matrix:
-        dockerfile: ${{ fromJson(format('[{0}]', needs.find-dockerfiles.outputs.dockerfile_list)) }}
-
+        dockerfile: ${{ fromJson(env.dockerfile_list) }}
+        
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
