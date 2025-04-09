@@ -9,10 +9,12 @@ ENV HOME_FOLDER="/usr/local/tomcat"
 RUN java -version
 RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARCHIVE && \
     tar -xzvf $SHIB_IDP_ARCHIVE && \
-    cd $SHIB_IDP_FOLDER \
+    cd $SHIB_IDP_FOLDER && \
     pwd
 
-RUN .$HOME_FOLDER/$SHIB_IDP_FOLDER/bin/install.sh \
+RUN pwd
+
+RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh \
     --noPrompt \
     --targetDir /opt/shibboleth-idp \
     --hostName blablabla.com \
