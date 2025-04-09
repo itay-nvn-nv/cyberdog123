@@ -20,15 +20,27 @@ jobs:
       - name: Find Dockerfiles
         id: dockerfiles
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          # Determine the parent commit.  Handles initial commit and branch creation cases.
+          PARENT_COMMIT=$(git rev-parse --short HEAD^)
+
+          # Check if there's a parent commit
+          if [ -z "$PARENT_COMMIT" ]; then
+            echo "No parent commit found.  This is likely the first commit."
+            CHANGED_FILES=$(git ls-tree -r HEAD --name-only) # Get all files in the repo
+          else
+            CHANGED_FILES=$(git diff --name-only "$PARENT_COMMIT" HEAD)
+          fi
+
           DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//')
+
           if [ -z "$DOCKERFILES" ]; then
             echo "No Dockerfiles found in the changed files. Skipping build and push."
-            echo "::set-output name=dockerfile_list::" # Empty list
+            echo "::set-output name=dockerfile_list::"
           else
             echo "Found Dockerfiles: $DOCKERFILES"
             echo "::set-output name=dockerfile_list::$DOCKERFILES"
           fi
+
         shell: bash
 
   build-and-push:
