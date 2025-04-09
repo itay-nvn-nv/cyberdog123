@@ -22,10 +22,12 @@ jobs:
         run: |
           set -x # Enable debugging
 
-          # Check if we're in a detached HEAD state
-          if git rev-parse --is-shallow-repository; then
+          # Check if we're in a detached HEAD state and if it's a shallow repository
+          IS_SHALLOW=$(git rev-parse --is-shallow-repository 2>/dev/null)
+
+          if [[ "$IS_SHALLOW" == "true" ]]; then #Corrected comparison
             echo "::warning title=Shallow Repository::The repository is shallow.  Fetching all history."
-            git fetch --unshallow
+            git fetch --unshallow || true  # Ignore the error if unshallow fails
           fi
 
           # Determine the parent commit.  Handles initial commit and branch creation cases.
