@@ -21,7 +21,7 @@ jobs:
         id: dockerfiles
         run: |
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//') # Changed to comma separated list
+          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//')
           if [ -z "$DOCKERFILES" ]; then
             echo "No Dockerfiles found in the changed files. Skipping build and push."
             echo "::set-output name=dockerfile_list::" # Empty list
@@ -32,21 +32,21 @@ jobs:
         shell: bash
 
   build-and-push:
-    needs: find-dockerfiles  # Ensure find-dockerfiles runs first
+    needs: find-dockerfiles
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    if: needs.find-dockerfiles.outputs.dockerfile_list != '' # Only run if there are Dockerfiles
+    if: needs.find-dockerfiles.outputs.dockerfile_list != ''
     strategy:
       matrix:
-        dockerfile: ${{ fromJson(format('["{0}"]', replace(needs.find-dockerfiles.outputs.dockerfile_list, ',', '","')) ) }} # Create an array
+        dockerfile: ${{ fromJson(format('[{0}]', needs.find-dockerfiles.outputs.dockerfile_list)) }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required to get changes between commits
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -59,14 +59,9 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Extract the directory from the Dockerfile path
           directory=$(dirname "${{ matrix.dockerfile }}")
-
-          # Extract the image name from the Dockerfile path.
           image_name=$(basename "$directory")
-
-          # Construct the full Docker Hub image name
-          image_full_name="${{ secrets.DOCKERHUB_USERNAME }}/$image_name:latest"
+          image_full_name="${{ secrets.DOCKERHUB_USERNAME }}/$image_name:${GITHUB_SHA::7}"
 
           echo "Building and pushing image: $image_full_name"
 
