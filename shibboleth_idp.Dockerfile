@@ -6,13 +6,18 @@ ENV SHIB_IDP_FOLDER="shibboleth-identity-provider-$VERSION"
 ENV SHIB_IDP_ARCHIVE="$SHIB_IDP_FOLDER.tar.gz"
 
 RUN java -version
-RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARCHIVE
-RUN tar -xzvf $SHIB_IDP_ARCHIVE
-RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh \
-                            --noPrompt \
-                            --targetDir /opt/shibboleth-idp \
-                            --hostName blablabla.com \
-                            --entityID runai-entity
+RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARCHIVE && \
+    tar -xzvf $SHIB_IDP_ARCHIVE && \
+    cd $SHIB_IDP_FOLDER
+
+RUN pwd
+RUN ls -la
+RUN ./bin/install.sh \
+    --noPrompt \
+    --targetDir /opt/shibboleth-idp \
+    --hostName blablabla.com \
+    --entityID runai-entity \
+    -Didp.scope blablabla
 
 # 1) Edit idp.properties: 
 #    The main configuration file is idp.properties, located in the conf directory of your IdP installation. Update the file with your specific settings, such as the entity ID and scope.
