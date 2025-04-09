@@ -1,9 +1,9 @@
-name: Docker Build and Push
+name: Build and Push Docker Images
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
 
 env:
   DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -11,120 +11,65 @@ env:
   DOCKERHUB_REPO: cyberdog123
 
 jobs:
-  find-dockerfiles:
+  build-and-push:
     runs-on: ubuntu-latest
-    outputs:
-      dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
-      - id: set-matrix
-        run: |
-          echo "dockerfiles=$(find . -type f -name "*.Dockerfile" | sed 's/^\.\///' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
-
-  check-updates:
-    needs: find-dockerfiles
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
-      fail-fast: false
-    outputs:
-      needs_update: ${{ steps.check.outputs.needs_update }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-
-      - name: Calculate image hash and check remote
-        id: check
-        run: |
-          dockerfile="${{ matrix.dockerfile }}"
-          image_name=$(basename "$dockerfile" .Dockerfile)
-          full_image_name="${{ env.DOCKERHUB_REPO }}/$image_name:latest"
-          
-          # Calculate hash of build context
-          context_hash=$(tar -czf - -C "$(dirname "$dockerfile")" . "$(basename "$dockerfile")" | sha256sum | cut -d' ' -f1)
-          
-          echo "Context hash: $context_hash"
-          
-          # Try to get remote image digest
-          remote_digest=$(docker manifest inspect "$full_image_name" 2>/dev/null | jq -r '.manifests[0].digest' || echo '')
-          
-          # If remote image doesn't exist or context has changed, mark for update
-          if [ -z "$remote_digest" ]; then
-            echo "needs_update=true" >> $GITHUB_OUTPUT
-            echo "Image doesn't exist remotely, needs building"
-          else
-            # Get labels from remote image
-            remote_context_hash=$(docker manifest inspect "$full_image_name" | jq -r '.manifests[0].annotations."build.context.hash"' || echo '')
-            
-            if [ "$context_hash" != "$remote_context_hash" ]; then
-              echo "needs_update=true" >> $GITHUB_OUTPUT
-              echo "Context hash changed, needs rebuilding"
-            else
-              echo "needs_update=false" >> $GITHUB_OUTPUT
-              echo "Image is up to date"
-            fi
-          fi
-          echo "context_hash=$context_hash" >> $GITHUB_OUTPUT
-
-  build:
-    needs: [find-dockerfiles, check-updates]
-    if: needs.check-updates.outputs.needs_update == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
+          fetch-depth: 0 # Required to get changes between commits
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
-      - name: Extract image name
-        id: image-name
+      - name: Find Dockerfiles and Build/Push
+        id: dockerfiles
         run: |
-          image_name=$(basename "${{ matrix.dockerfile }}" .Dockerfile)
-          echo "name=$image_name" >> $GITHUB_OUTPUT
+          # Get the list of changed files since the last commit on main
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
 
-      - name: Build Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ github.workspace }}
-          file: ${{ matrix.dockerfile }}
-          push: true
-          load: true
-          tags: |
-            ${{ env.DOCKERHUB_REPO }}/${{ steps.image-name.outputs.name }}:latest
-          labels: |
-            build.context.hash=${{ needs.check-updates.outputs.context_hash }}
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_REPO }}/${{ steps.image-name.outputs.name }}:latest
-          cache-to: type=inline
+          # Find Dockerfiles in the changed files
+          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ' ')
 
-  patch-dockerhub:
-    needs: [build]
-    if: needs.check-updates.outputs.needs_update == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dockerfile: ${{ fromJson(needs.find-dockerfiles.outputs.dockerfiles) }}
-      fail-fast: false
-    steps:
-      - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-          repository: peterevans/dockerhub-description
-          readme-filepath: ./path/to/README.md
+          if [ -z "$DOCKERFILES" ]; then
+            echo "::set-output name=changed::false"
+            echo "No Dockerfiles found in the changed files. Skipping build and push."
+          else
+            echo "::set-output name=changed::true"
+            echo "Found Dockerfiles: $DOCKERFILES"
+            echo "::set-output name=dockerfile_list::$DOCKERFILES"  # Set output for next step
+          fi
+        shell: bash
+
+      - name: Build and Push Docker Images
+        if: steps.dockerfiles.outputs.changed == 'true'
+        run: |
+          for dockerfile in $(echo "${{ steps.dockerfiles.outputs.dockerfile_list }}"); do
+            # Extract the directory from the Dockerfile path
+            directory=$(dirname "$dockerfile")
+
+            # Extract the image name from the Dockerfile path.  This assumes that the
+            # directory name containing the Dockerfile corresponds to the desired image name.
+            image_name=$(basename "$directory")
+
+            # Construct the full Docker Hub image name
+            image_full_name="${{ env.DOCKERHUB_USERNAME }}/$image_name:latest" # Using short commit SHA
+
+            echo "Building and pushing image: $image_full_name"
+
+            docker build --push \
+              --build-arg BUILDKIT_INLINE_CACHE=1 \
+              --tag "$image_full_name" \
+              --file "$dockerfile" \
+              "$directory"
+          done
+        shell: bash
