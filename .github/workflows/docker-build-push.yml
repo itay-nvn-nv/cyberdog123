@@ -5,17 +5,43 @@ on:
     branches:
       - main
 
-env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKERHUB_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
-  DOCKERHUB_REPO: cyberdog123
-
 jobs:
+  find-dockerfiles:
+    runs-on: ubuntu-latest
+    outputs:
+      dockerfile_list: ${{ steps.dockerfiles.outputs.dockerfile_list }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find Dockerfiles
+        id: dockerfiles
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//') # Changed to comma separated list
+          if [ -z "$DOCKERFILES" ]; then
+            echo "No Dockerfiles found in the changed files. Skipping build and push."
+            echo "::set-output name=dockerfile_list::" # Empty list
+          else
+            echo "Found Dockerfiles: $DOCKERFILES"
+            echo "::set-output name=dockerfile_list::$DOCKERFILES"
+          fi
+        shell: bash
+
   build-and-push:
+    needs: find-dockerfiles  # Ensure find-dockerfiles runs first
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    if: needs.find-dockerfiles.outputs.dockerfile_list != '' # Only run if there are Dockerfiles
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(format('["{0}"]', replace(needs.find-dockerfiles.outputs.dockerfile_list, ',', '","')) ) }} # Create an array
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,48 +54,24 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Find Dockerfiles and Build/Push
-        id: dockerfiles
+      - name: Build and Push Docker Image
         run: |
-          # Get the list of changed files since the last commit on main
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          # Extract the directory from the Dockerfile path
+          directory=$(dirname "${{ matrix.dockerfile }}")
 
-          # Find Dockerfiles in the changed files
-          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ' ')
+          # Extract the image name from the Dockerfile path.
+          image_name=$(basename "$directory")
 
-          if [ -z "$DOCKERFILES" ]; then
-            echo "::set-output name=changed::false"
-            echo "No Dockerfiles found in the changed files. Skipping build and push."
-          else
-            echo "::set-output name=changed::true"
-            echo "Found Dockerfiles: $DOCKERFILES"
-            echo "::set-output name=dockerfile_list::$DOCKERFILES"  # Set output for next step
-          fi
-        shell: bash
+          # Construct the full Docker Hub image name
+          image_full_name="${{ secrets.DOCKERHUB_USERNAME }}/$image_name:latest"
 
-      - name: Build and Push Docker Images
-        if: steps.dockerfiles.outputs.changed == 'true'
-        run: |
-          for dockerfile in $(echo "${{ steps.dockerfiles.outputs.dockerfile_list }}"); do
-            # Extract the directory from the Dockerfile path
-            directory=$(dirname "$dockerfile")
+          echo "Building and pushing image: $image_full_name"
 
-            # Extract the image name from the Dockerfile path.  This assumes that the
-            # directory name containing the Dockerfile corresponds to the desired image name.
-            image_name=$(basename "$directory")
-
-            # Construct the full Docker Hub image name
-            image_full_name="${{ env.DOCKERHUB_USERNAME }}/$image_name:latest" # Using short commit SHA
-
-            echo "Building and pushing image: $image_full_name"
-
-            docker build --push \
-              --build-arg BUILDKIT_INLINE_CACHE=1 \
-              --tag "$image_full_name" \
-              --file "$dockerfile" \
-              "$directory"
-          done
-        shell: bash
+          docker build --push \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --tag "$image_full_name" \
+            --file "${{ matrix.dockerfile }}" \
+            "$directory"
