@@ -12,15 +12,14 @@ RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARC
     cd $SHIB_IDP_FOLDER && \
     pwd
 
-RUN pwd
-RUN echo hello01
+ENV SHIB_IDP_CONFIG_FILE="/tmp/shib_idp_install_config"
+RUN  echo "idp.noprompt=true" >> $SHIB_IDP_CONFIG_FILE
+RUN  echo 'idp.target.dir="/opt/shibboleth-idp"' >> $SHIB_IDP_CONFIG_FILE
+RUN  echo 'idp.entityID="runai-entity"' >> $SHIB_IDP_CONFIG_FILE
+RUN  echo 'idp.host.name="blablabla.com"' >> $SHIB_IDP_CONFIG_FILE
+RUN  echo 'idp.scope="blablabla"' >> $SHIB_IDP_CONFIG_FILE
 
-RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh \
-    --noPrompt \
-    --targetDir /opt/shibboleth-idp \
-    --hostName blablabla.com \
-    --entityID runai-entity \
-    -Didp.scope blablabla
+RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile shib_idp_install_config
 
 # 1) Edit idp.properties: 
 #    The main configuration file is idp.properties, located in the conf directory of your IdP installation. Update the file with your specific settings, such as the entity ID and scope.
