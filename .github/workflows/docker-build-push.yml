@@ -84,8 +84,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build and Push Docker Image
         run: |
@@ -94,7 +94,7 @@ jobs:
           dockerfile_name=$(basename "${{ matrix.dockerfile }}" .Dockerfile)  # Remove the .Dockerfile extension
           
           # Create the full image name (username/repository:latest)
-          image_full_name="${{ secrets.DOCKERHUB_USERNAME }}/$dockerfile_name:latest"
+          image_full_name="${{ secrets.DOCKER_USERNAME }}/$dockerfile_name:latest"
 
           echo "Building and pushing image: $image_full_name"
 
