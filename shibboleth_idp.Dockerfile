@@ -4,18 +4,17 @@ ENV VERSION="5.1.4"
 
 ENV SHIB_IDP_FOLDER="shibboleth-identity-provider-$VERSION"
 ENV SHIB_IDP_ARCHIVE="$SHIB_IDP_FOLDER.tar.gz"
-ENV HOME_FOLDER="/usr/local/tomcat"
+
+RUN apt update && apt install -y vim
 
 RUN java -version
 RUN wget https://shibboleth.net/downloads/identity-provider/latest/$SHIB_IDP_ARCHIVE && \
-    tar -xzvf $SHIB_IDP_ARCHIVE && \
-    cd $SHIB_IDP_FOLDER && \
-    pwd
+    tar -xzvf $SHIB_IDP_ARCHIVE
 
 ENV SHIB_IDP_CONFIG_FILE="/tmp/shib_idp_install_config"
-RUN echo "idp.noprompt=true" >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.noprompt=true' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.target.dir=/opt/shibboleth-idp' >> $SHIB_IDP_CONFIG_FILE
-RUN echo 'idp.entityID=runai-entity' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.entityID=runai-entity-id-test' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.host.name=blablabla.com' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.scope=blablabla' >> $SHIB_IDP_CONFIG_FILE
 
@@ -30,4 +29,5 @@ RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 # 3) Set up credentials:
 #    Configure your IdP's credentials for signing and encryption. Update the credentials.xml file with paths to your keystore and private key.
 
-RUN cp /opt/shibboleth-idp/war/idp.war /usr/local/tomcat/webapps/sh
+RUN cp /opt/shibboleth-idp/war/idp.war $CATALINA_HOME/webapps/idp.war
+CMD bash $CATALINA_HOME/bin/catalina.sh start
