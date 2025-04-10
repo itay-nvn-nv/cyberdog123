@@ -15,8 +15,8 @@ ENV SHIB_IDP_CONFIG_FILE="/tmp/shib_idp_install_config"
 RUN echo 'idp.noprompt=true' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.target.dir=/opt/shibboleth-idp' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.entityID=runai-entity-id-test' >> $SHIB_IDP_CONFIG_FILE
-RUN echo 'idp.host.name=blablabla.com' >> $SHIB_IDP_CONFIG_FILE
-RUN echo 'idp.scope=blablabla' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.host.name=sdsc-upgrade-lab.runailabs-cs.com' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.scope=runai-test-instance' >> $SHIB_IDP_CONFIG_FILE
 
 RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 
@@ -28,6 +28,8 @@ RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 #
 # 3) Set up credentials:
 #    Configure your IdP's credentials for signing and encryption. Update the credentials.xml file with paths to your keystore and private key.
+
+RUN sed -i 's/\.level = .*/\.level = FINEST/' $CATALINA_HOME/conf/logging.properties
 
 RUN cp /opt/shibboleth-idp/war/idp.war $CATALINA_HOME/webapps/idp.war
 CMD bash $CATALINA_HOME/bin/catalina.sh run
