@@ -30,4 +30,4 @@ RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 #    Configure your IdP's credentials for signing and encryption. Update the credentials.xml file with paths to your keystore and private key.
 
 RUN cp /opt/shibboleth-idp/war/idp.war $CATALINA_HOME/webapps/idp.war
-CMD bash $CATALINA_HOME/bin/catalina.sh start
+CMD bash $CATALINA_HOME/bin/catalina.sh run
