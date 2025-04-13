@@ -17,6 +17,12 @@ RUN echo 'idp.target.dir=/opt/shibboleth-idp' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.entityID=runai-entity-id-test' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.host.name=sdsc-upgrade-lab.runailabs-cs.com' >> $SHIB_IDP_CONFIG_FILE
 RUN echo 'idp.scope=runai-test-instance' >> $SHIB_IDP_CONFIG_FILE
+# ldap data connector configuration
+RUN echo 'idp.attribute.resolver.LDAP.ldapURL=ldap://openldap.runai.svc.cluster.local:389' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.attribute.resolver.LDAP.baseDN=dc=acme,dc=zzz' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.attribute.resolver.LDAP.bindDN=cn=admin,dc=acme,dc=zzz' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.attribute.resolver.LDAP.bindDNCredential=admin' >> $SHIB_IDP_CONFIG_FILE
+RUN echo 'idp.attribute.resolver.LDAP.useStartTLS=false' >> $SHIB_IDP_CONFIG_FILE
 
 RUN cd $SHIB_IDP_FOLDER && ./bin/install.sh --propertyFile $SHIB_IDP_CONFIG_FILE
 
