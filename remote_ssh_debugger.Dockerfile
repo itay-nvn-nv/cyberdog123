@@ -29,6 +29,8 @@ RUN mkdir /home/"$USERNAME"/.ssh && \
 RUN sed -i 's/#PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/g' /etc/ssh/sshd_config
 
+# Create the /run/sshd directory and ensure it has the correct permissions
+RUN mkdir -p /run/sshd && chmod 0755 /run/sshd
 
 # Expose SSH port
 EXPOSE $SSH_PORT
