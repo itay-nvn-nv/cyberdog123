@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Define environment variables (optional, but good practice)
 ENV USERNAME=developer
 ENV PASSWORD=123456
-ENV SSH_PORT=22
+ENV SSH_PORT=2222
 ENV USER_UID=5000
 ENV USER_GID=5000
 
@@ -40,12 +40,13 @@ RUN mkdir -p /home/"$USERNAME"/.ssh/etc && \
     cp /etc/ssh/sshd_config /home/"$USERNAME"/.ssh/etc/sshd_config && \
     chown -R "$USERNAME":"$USERNAME" /home/"$USERNAME"/.ssh
 
-# Modify sshd_config to use user-writable paths
+# Modify sshd_config to use user-writable paths and non-privileged port
 RUN sed -i "s|#HostKey /etc/ssh/ssh_host_rsa_key|HostKey /home/$USERNAME/.ssh/ssh_host_rsa_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /home/$USERNAME/.ssh/ssh_host_ecdsa_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /home/$USERNAME/.ssh/ssh_host_ed25519_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#PidFile /var/run/sshd.pid|PidFile /home/$USERNAME/.ssh/sshd.pid|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
-    echo "Port $SSH_PORT" >> /home/"$USERNAME"/.ssh/etc/sshd_config
+    sed -i "s|#Port 22|Port $SSH_PORT|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
+    chown -R "$USERNAME":"$USERNAME" /home/"$USERNAME"/.ssh
 
 # Create a startup script that generates host keys in user directory
 RUN echo '#!/bin/bash\n\
