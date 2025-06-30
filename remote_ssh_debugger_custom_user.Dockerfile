@@ -44,7 +44,7 @@ RUN mkdir -p /home/"$USERNAME"/.ssh/etc && \
 RUN sed -i "s|#HostKey /etc/ssh/ssh_host_rsa_key|HostKey /home/$USERNAME/.ssh/ssh_host_rsa_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /home/$USERNAME/.ssh/ssh_host_ecdsa_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /home/$USERNAME/.ssh/ssh_host_ed25519_key|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
-    sed -i "s|#PidFile /var/run/sshd.pid|PidFile /home/$USERNAME/.ssh/sshd.pid|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
+    sed -i "s|#PidFile /run/sshd.pid|PidFile /home/$USERNAME/.ssh/sshd.pid|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     sed -i "s|#Port 22|Port $SSH_PORT|g" /home/"$USERNAME"/.ssh/etc/sshd_config && \
     chown -R "$USERNAME":"$USERNAME" /home/"$USERNAME"/.ssh
 
