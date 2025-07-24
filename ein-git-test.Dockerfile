@@ -69,9 +69,6 @@ exec /usr/sbin/sshd -D -e \\\n\
      -o UsePAM=no\n' > /start-sshd.sh && \
     chmod +x /start-sshd.sh
 
-RUN chown $USERNAME:$USERNAME /home/$USERNAME/.ssh/authorized_keys \
-    && chmod 600 /home/$USERNAME/.ssh/authorized_keys
-
 ################################## End of SSH installation ##################################
 
 ############################################## Switch to user and start the server ##############################################
