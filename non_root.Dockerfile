@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM nginx
 
 # Create the non-root user
 RUN addgroup -g 1001 thedude && \
