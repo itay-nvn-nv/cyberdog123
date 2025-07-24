@@ -69,9 +69,6 @@ exec /usr/sbin/sshd -D -e \\\n\
      -o UsePAM=no\n' > /start-sshd.sh && \
     chmod +x /start-sshd.sh
 
-# ACTION NEEDED, generate SSH keys locally with ssh-keygen -t ed25519 and copy the public key to id_ed25519.pub in this directory
-COPY ./id_ed25519.pub /home/$USERNAME/.ssh/authorized_keys
-
 RUN chown $USERNAME:$USERNAME /home/$USERNAME/.ssh/authorized_keys \
     && chmod 600 /home/$USERNAME/.ssh/authorized_keys
 
