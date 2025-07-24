@@ -1,8 +1,8 @@
 FROM nginx
 
 # Create the non-root user
-RUN addgroup -g 1001 thedude && \
-    adduser -D -u 1001 -G thedude thedude
+RUN addgroup --gid 7777 thedude && \
+    adduser --disabled-password --uid 5555 --ingroup thedude thedude
 
 # Switch to non-root user
 USER thedude
