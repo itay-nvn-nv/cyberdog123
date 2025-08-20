@@ -22,11 +22,11 @@ RUN mkdir -p /usr/local/bin && \
   echo 'echo "Starting JupyterLab..."' >> /usr/local/bin/start-services.sh && \
   echo 'jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root \' >> /usr/local/bin/start-services.sh && \
   echo ' --NotebookApp.token="" --NotebookApp.password="" \' >> /usr/local/bin/start-services.sh && \
-  echo ' --notebook-dir=/workspace &' >> /usr/local/bin/start-services.sh && \
+  echo ' --notebook-dir=/ &' >> /usr/local/bin/start-services.sh && \
   echo '' >> /usr/local/bin/start-services.sh && \
   echo '# Start code-server in background' >> /usr/local/bin/start-services.sh && \
   echo 'echo "Starting code-server..."' >> /usr/local/bin/start-services.sh && \
-  echo 'code-server --bind-addr 0.0.0.0:8080 --auth none /workspace &' >> /usr/local/bin/start-services.sh && \
+  echo 'code-server --bind-addr 0.0.0.0:8080 --auth none / &' >> /usr/local/bin/start-services.sh && \
   echo '' >> /usr/local/bin/start-services.sh && \
   echo '# Wait for both services to be ready' >> /usr/local/bin/start-services.sh && \
   echo 'echo "Waiting for services to start..."' >> /usr/local/bin/start-services.sh && \
