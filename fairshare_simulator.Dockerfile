@@ -1,7 +1,7 @@
 # Dockerfile for NVIDIA KAI-Scheduler Fairshare Simulator
 # This builds and runs the fairshare-simulator from the latest source
 
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Install git for cloning
 RUN apk add --no-cache git
