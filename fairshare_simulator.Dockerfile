@@ -25,13 +25,17 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /fairshare-simulator .
 # --- Runtime stage ---
 FROM alpine:3.19
 
-# Add ca-certificates for any HTTPS calls
-RUN apk add --no-cache ca-certificates
+# Add ca-certificates, curl and vim for debugging/testing
+RUN apk add --no-cache ca-certificates curl vim
 
 WORKDIR /app
 
 # Copy the built binary from builder
 COPY --from=builder /fairshare-simulator /app/fairshare-simulator
+
+# Copy documentation and example files for reference
+COPY --from=builder /build/KAI-Scheduler/cmd/fairshare-simulator/README.md /app/README.md
+COPY --from=builder /build/KAI-Scheduler/cmd/fairshare-simulator/example.http /app/example.http
 
 # Expose the default port
 EXPOSE 8080
