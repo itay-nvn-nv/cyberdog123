@@ -10,4 +10,4 @@ RUN make
 
 RUN ./gpu_burn --help
 
-ENTRYPOINT ["./gpu_burn"]
+ENTRYPOINT ["./gpu_burn -d 1800"]
