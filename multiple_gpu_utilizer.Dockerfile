@@ -6,4 +6,6 @@ RUN git clone https://github.com/wilicc/gpu-burn
 
 RUN cd gpu-burn && make
 
-ENTRYPOINT ["./gpu-burn"]
+RUN ./gpu-burn/gpu-burn --help
+
+ENTRYPOINT ["./gpu-burn/gpu-burn"]
