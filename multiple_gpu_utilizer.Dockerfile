@@ -4,8 +4,10 @@ RUN apt update && apt install -y git make build-essential nvidia-cuda-dev cuda-n
 
 RUN git clone https://github.com/wilicc/gpu-burn
 
-RUN cd gpu-burn && make
+WORKDIR /gpu-burn
 
-RUN ./gpu-burn/gpu-burn --help
+RUN make
 
-ENTRYPOINT ["./gpu-burn/gpu-burn"]
+RUN ./gpu-burn --help
+
+ENTRYPOINT ["./gpu-burn"]
