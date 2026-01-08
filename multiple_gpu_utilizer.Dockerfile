@@ -8,6 +8,6 @@ WORKDIR /gpu-burn
 
 RUN make
 
-RUN ./gpu-burn --help
+RUN ./gpu_burn --help
 
-ENTRYPOINT ["./gpu-burn"]
+ENTRYPOINT ["./gpu_burn"]
