@@ -29,11 +29,6 @@ curl -X POST http://localhost:8000/v1/infer \
   -d '{"word1": "hello", "word2": "nim"}'
 ```
 
-### Run - NIM with GPU
-```bash
-docker run -d -p 8000:8000 --gpus all inference-mock-server:latest
-```
-
 ---
 
 ## 📋 API Reference
@@ -103,7 +98,7 @@ spec:
   replicas: 1
   resources:
     limits:
-      nvidia.com/gpu: "0"
+      nvidia.com/gpu: "0"  # Mock server doesn't need GPU
   expose:
     enabled: true
     service:
@@ -125,8 +120,26 @@ spec:
 - ✅ Single codebase for both Knative and NIM
 - ✅ Backward compatible with existing Knative deployments
 - ✅ NIM-compliant health endpoints
-- ✅ GPU-ready (NVIDIA CUDA base image)
+- ✅ Lightweight image (~150MB) - uses `python:3.10-slim`
 - ✅ Configurable via environment variables
+
+---
+
+## 💡 Note on Base Image
+
+This mock server uses **`python:3.10-slim`** (~150MB) instead of a CUDA base image since it doesn't perform actual GPU inference.
+
+**If you need real GPU inference:**
+```dockerfile
+# Change line 13 in inference_mock_server.Dockerfile from:
+FROM python:3.10-slim
+
+# To:
+FROM nvidia/cuda:12.2.0-base-ubuntu22.04
+# Then add: RUN apt-get update && apt-get install -y python3.10 python3-pip && ...
+```
+
+For a mock server, the lightweight image provides the same NIM-compatible API without the extra ~1.3GB overhead.
 
 ---
 

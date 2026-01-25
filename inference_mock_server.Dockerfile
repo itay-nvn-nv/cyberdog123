@@ -7,18 +7,11 @@
 #
 #   For NIM (port 8000):
 #     docker run -p 8000:8000 <image>
-#     OR with GPU: docker run --gpus all -p 8000:8000 <image>
+#
+# Note: Uses lightweight Python image since this is a mock server
+#       For real GPU inference, use nvidia/cuda base image instead
 
-FROM nvidia/cuda:12.2.0-base-ubuntu22.04
-
-# Install Python
-RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set Python 3.10 as default
-RUN ln -sf /usr/bin/python3.10 /usr/bin/python
+FROM python:3.10-slim
 
 # Copy the unified inference server
 COPY inference_mock_server/inference_server.py /app/inference_server.py
