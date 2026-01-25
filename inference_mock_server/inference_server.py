@@ -8,6 +8,8 @@
 # NIM mode:
 #   - GET  /v1/health/ready        -> readiness probe (JSON)
 #   - GET  /v1/health/live         -> liveness probe (JSON)
+#   - GET  /v1/models              -> list available models (JSON)
+#   - GET  /v1/metadata            -> service metadata (JSON)
 #   - POST /v1/infer               -> inference (JSON response)
 #   - POST /v1/chat/completions    -> inference (JSON response)
 
@@ -36,6 +38,10 @@ class UnifiedHandler(BaseHTTPRequestHandler):
             self._handle_live()
         elif self.path in ['/', '/v1/health', '/health']:
             self._handle_status()
+        elif self.path == '/v1/models':
+            self._handle_models()
+        elif self.path == '/v1/metadata':
+            self._handle_metadata()
         else:
             self.send_error(404, "Not Found")
 
@@ -79,6 +85,40 @@ class UnifiedHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(response.encode('utf-8'))
         self.log_message("GET request: %s", response)
+
+    def _handle_models(self):
+        """NIM models endpoint - lists available models"""
+        response = json.dumps({
+            "object": "list",
+            "data": [
+                {
+                    "id": "mock-inference-v1",
+                    "object": "model",
+                    "created": int(SERVER_START_TIME),
+                    "owned_by": "mock-server"
+                }
+            ]
+        })
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(response.encode('utf-8'))
+        self.log_message("Models list requested")
+
+    def _handle_metadata(self):
+        """NIM metadata endpoint - provides service metadata"""
+        response = json.dumps({
+            "name": "mock-inference-server",
+            "version": "1.0.0",
+            "model": "mock-inference-v1",
+            "description": "Mock inference server for testing NIM compatibility",
+            "uptime_seconds": time.time() - SERVER_START_TIME
+        })
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(response.encode('utf-8'))
+        self.log_message("Metadata requested")
 
     def do_POST(self):
         if self.path == '/':
@@ -160,6 +200,8 @@ def run(server_class=HTTPServer, handler_class=UnifiedHandler, port=PORT):
     print(f'NIM endpoints:')
     print(f'  - GET  /v1/health/ready        -> readiness probe')
     print(f'  - GET  /v1/health/live         -> liveness probe')
+    print(f'  - GET  /v1/models              -> list available models')
+    print(f'  - GET  /v1/metadata            -> service metadata')
     print(f'  - POST /v1/infer               -> inference (JSON)')
     print(f'  - POST /v1/chat/completions    -> inference (JSON)')
     print(f'')
