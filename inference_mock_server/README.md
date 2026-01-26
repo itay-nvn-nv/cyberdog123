@@ -4,16 +4,13 @@ A single Docker image that works with both **Knative** and **NVIDIA NIM** deploy
 
 ## 🚀 Quick Start
 
-### Build
-```bash
-docker build -f inference_mock_server.Dockerfile -t inference-mock-server:latest .
-```
-
 ### Run - Knative Mode (Port 8080)
 ```bash
 docker run -d -p 8080:8080 -e PORT=8080 inference-mock-server:latest
+```
 
-# Test
+### Test
+```bash
 curl http://localhost:8080/
 curl -X POST http://localhost:8080/ --data "word1=hello" --data "word2=knative"
 ```
