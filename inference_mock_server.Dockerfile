@@ -1,15 +1,5 @@
 # Unified Inference Mock Server Dockerfile
 # Compatible with both Knative and NVIDIA NIM deployments
-#
-# Usage:
-#   For Knative (port 8080):
-#     docker run -p 8080:8080 -e PORT=8080 <image>
-#
-#   For NIM (port 8000):
-#     docker run -p 8000:8000 <image>
-#
-# Note: Uses lightweight Python image since this is a mock server
-#       For real GPU inference, use nvidia/cuda base image instead
 
 FROM python:3.10-slim
 
