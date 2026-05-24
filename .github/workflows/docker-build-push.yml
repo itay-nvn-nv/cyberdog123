@@ -44,7 +44,8 @@ jobs:
 
           echo "Changed files: $CHANGED_FILES"
 
-          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" | tr '\n' ',' | sed 's/,$//')
+          DOCKERFILES=$(echo "$CHANGED_FILES" | grep "Dockerfile" || true)
+          DOCKERFILES=$(echo "$DOCKERFILES" | tr '\n' ',' | sed 's/,$//')
 
           if [ -z "$DOCKERFILES" ]; then
             echo "No Dockerfiles found in the changed files. Skipping build and push."
