@@ -1,5 +1,6 @@
 # Unified Inference Mock Server Dockerfile
 # Compatible with both Knative and NVIDIA NIM deployments
+# v1.1.0 - Add INIT_DELAY_SECONDS for pre-bind model loading simulation
 
 FROM python:3.10-slim
 
