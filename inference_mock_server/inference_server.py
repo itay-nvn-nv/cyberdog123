@@ -190,10 +190,17 @@ class UnifiedHandler(BaseHTTPRequestHandler):
 def run(server_class=HTTPServer, handler_class=UnifiedHandler, port=PORT):
     global SERVER_START_TIME
 
-    if INIT_DELAY_SECONDS > 0:
-        print(f'Simulating model loading for {INIT_DELAY_SECONDS}s (set INIT_DELAY_SECONDS=0 to skip)...')
+    revision = os.getenv('K_REVISION', '')
+    is_first_revision = revision.endswith('-00001')
+
+    if INIT_DELAY_SECONDS > 0 and not is_first_revision:
+        print(f'Revision {revision}: simulating model reload for {INIT_DELAY_SECONDS}s...')
         time.sleep(INIT_DELAY_SECONDS)
-        print(f'Model loading complete.')
+        print(f'Model reload complete.')
+    elif INIT_DELAY_SECONDS > 0 and is_first_revision:
+        print(f'Revision {revision}: first revision, skipping init delay (model pre-cached).')
+    else:
+        print(f'Revision {revision}: no init delay configured.')
 
     SERVER_START_TIME = time.time()
 

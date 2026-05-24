@@ -51,7 +51,7 @@ curl -X POST http://localhost:8000/v1/infer \
 Set via environment variables:
 - `PORT`: Server port (default: `8000`, set to `8080` for Knative)
 - `WARMUP_SECONDS`: Seconds before `/v1/health/ready` returns 200 (default: `5`)
-- `INIT_DELAY_SECONDS`: Seconds to sleep before starting the HTTP server, simulating model loading (default: `0`). During this delay the port is not open, which is how real NIM containers behave while loading GPU weights.
+- `INIT_DELAY_SECONDS`: Seconds to sleep before starting the HTTP server, simulating model loading (default: `0`). During this delay the port is not open, which is how real NIM containers behave while loading GPU weights. The delay is **skipped on the first Knative revision** (`-00001`) to simulate a pre-cached model, and **applied on subsequent revisions** (`-00002`, etc.) to simulate a full model reload. This allows testing upgrade scenarios where an existing workload is healthy but a newly triggered revision times out.
 
 ---
 
