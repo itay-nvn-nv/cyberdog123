@@ -21,8 +21,9 @@ import os
 
 # Configuration via environment variables
 PORT = int(os.getenv('PORT', '8000'))  # Default to 8000 (NIM), can override to 8080 (Knative)
-SERVER_START_TIME = time.time()
 WARMUP_SECONDS = int(os.getenv('WARMUP_SECONDS', '5'))
+INIT_DELAY_SECONDS = int(os.getenv('INIT_DELAY_SECONDS', '0'))
+SERVER_START_TIME = None  # Set after init delay completes
 
 def hello(word1, word2):
     chars1 = len(str(word1))
@@ -187,11 +188,21 @@ class UnifiedHandler(BaseHTTPRequestHandler):
         self.log_message(f"Inference request: {result}")
 
 def run(server_class=HTTPServer, handler_class=UnifiedHandler, port=PORT):
+    global SERVER_START_TIME
+
+    if INIT_DELAY_SECONDS > 0:
+        print(f'Simulating model loading for {INIT_DELAY_SECONDS}s (set INIT_DELAY_SECONDS=0 to skip)...')
+        time.sleep(INIT_DELAY_SECONDS)
+        print(f'Model loading complete.')
+
+    SERVER_START_TIME = time.time()
+
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     
     print(f'Starting unified inference server on port {port}...')
     print(f'Mode: NIM-compatible with Knative backward compatibility')
+    print(f'Init delay: {INIT_DELAY_SECONDS}s, Warmup: {WARMUP_SECONDS}s')
     print(f'')
     print(f'Knative endpoints (backward compatible):')
     print(f'  - GET  /          -> health check (plain text)')

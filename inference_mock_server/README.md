@@ -50,7 +50,8 @@ curl -X POST http://localhost:8000/v1/infer \
 
 Set via environment variables:
 - `PORT`: Server port (default: `8000`, set to `8080` for Knative)
-- `WARMUP_SECONDS`: Seconds before readiness (default: `5`)
+- `WARMUP_SECONDS`: Seconds before `/v1/health/ready` returns 200 (default: `5`)
+- `INIT_DELAY_SECONDS`: Seconds to sleep before starting the HTTP server, simulating model loading (default: `0`). During this delay the port is not open, which is how real NIM containers behave while loading GPU weights.
 
 ---
 

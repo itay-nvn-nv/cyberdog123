@@ -12,6 +12,7 @@ WORKDIR /app
 # Override with -e PORT=8080 for Knative
 ENV PORT=8000
 ENV WARMUP_SECONDS=5
+ENV INIT_DELAY_SECONDS=0
 
 # Expose both ports (use PORT env to determine which one)
 EXPOSE 8000
